@@ -1,11 +1,16 @@
 import os
 import unittest
 import json
+import credentials
 from flask_sqlalchemy import SQLAlchemy
 
 from flaskr import create_app
 from models import setup_db, Question, Category
 
+
+# using suggested solution mentiond in https://knowledge.udacity.com/questions/196553 to isolate credentials
+password = credentials.password
+username = credentials.username
 
 class TriviaTestCase(unittest.TestCase):
     """This class represents the trivia test case"""
@@ -16,7 +21,7 @@ class TriviaTestCase(unittest.TestCase):
         self.client = self.app.test_client
         self.database_name = "trivia_test"
         # self.database_path = "postgres://{}/{}".format('localhost:5432', self.database_name)
-        self.database_path = "postgres://{}:{}@{}/{}".format('postgres','95149514','localhost:5432', self.database_name)
+        self.database_path = "postgres://{}:{}@{}/{}".format(username,password,'localhost:5432', self.database_name)
         setup_db(self.app, self.database_path)
 
         # binds the app to the current context
@@ -128,7 +133,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         # check returned data 
         self.assertTrue(len(data["questions"]))
-        self.assertEqual(len(questions), data["totalQuestions"])
+        self.assertEqual(len(questions), data["total_questions"])
     
     def test_failed_get_questions_by_category(self):
         response = self.client().get('categories/test/questions')

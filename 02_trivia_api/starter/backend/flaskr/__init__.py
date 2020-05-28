@@ -22,7 +22,7 @@ def create_app(test_config=None):
   '''
   @app.after_request
   def after_request(response):
-    response.headers.add("Access-Control-Alow-Hearders", "  Content-Type, Authorization")
+    response.headers.add("Access-Control-Alow-Hearders", "Content-Type, Authorization")
     response.headers.add("Access-Control-Allow-Methods", "GET, PUT, POST, PATCH, DELETE, OPTIONS")
     return response
 
@@ -107,7 +107,7 @@ def create_app(test_config=None):
       abort(400)
 
   @app.route('/questions', methods=['POST'])
-  def create_question():
+  def post_question():
     if request.data:
       data = request.get_json()
       '''
@@ -125,11 +125,12 @@ def create_app(test_config=None):
           searchTerm = data["searchTerm"]
           questions = Question.query.filter(Question.question.ilike('%'+searchTerm+'%')).all()  
           questionlist = [q.format() for q in questions]
+          categorieslist = [category.format() for category in Category.query.all()]
           return jsonify({
             "success": True,
             "questions": questionlist,
             "totalQuestions": len(questionlist),
-            "currentCategory": None
+            "current_category": None
           })
         except:
           abort(422)
@@ -171,15 +172,16 @@ def create_app(test_config=None):
   category to be shown. 
   '''
   @app.route('/categories/<int:category_id>/questions')
-  def get_question_by_category(category_id):
+  def get_questions_by_category(category_id):
     try:
       questions = Question.query.filter_by(category=category_id).all()  
       questionlist = [q.format() for q in questions]
+      current_category = Category.query.get(category_id)
       return jsonify({
         "success": True,
         "questions": questionlist,
-        "totalQuestions": len(questionlist),
-        "currentCategory": category_id
+        "total_questions": len(questionlist),
+        "current_category": current_category.format()
       })
     except:
       abort(404)

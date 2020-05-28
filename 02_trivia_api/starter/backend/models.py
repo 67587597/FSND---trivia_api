@@ -2,9 +2,15 @@ import os
 from sqlalchemy import Column, String, Integer, create_engine
 from flask_sqlalchemy import SQLAlchemy
 import json
+import credentials
 
 database_name = "trivia"
-database_path = "postgres://{}:{}@{}/{}".format('postgres','95149514','localhost:5432', database_name)
+# using suggested solution mentiond in https://knowledge.udacity.com/questions/196553 to isolate credentials
+password = credentials.password
+username = credentials.username
+
+
+database_path = "postgres://{}:{}@{}/{}".format(username,password,'localhost:5432', database_name)
 
 db = SQLAlchemy()
 
