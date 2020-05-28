@@ -44,17 +44,119 @@ class TriviaTestCase(unittest.TestCase):
         response = self.client().get('/questions')
         data = json.loads(response.data)
         self.assertEqual(data['success'], True)
+        # check returned data 
+        self.assertTrue(len(data["questions"]))
+        self.assertEqual(response.status_code, 200)
+    
+    def test_get_questions_paginated(self):
+        response = self.client().get('/questions?page=2')
+        data = json.loads(response.data)
+        self.assertEqual(data['success'], True)
         # check pagination
         self.assertLessEqual(len(data["questions"]), 10)
         self.assertEqual(response.status_code, 200)
     
-    def test_not_valid_page_get_questions(self):
+    def test_not_valid_page(self):
         response = self.client().get('/questions?page=200000')
         data = json.loads(response.data)
         self.assertEqual(data['success'], False)
-        # check pagination
+        # check returned message
         self.assertEqual(data['message'], "Resource not found")
         self.assertEqual(response.status_code, 404)
+    
+    def test_delete_question(self):
+        id = 9
+        question = Question.query.filter(Question.id == id).one_or_none()
+        if question is not None:
+            response = self.client().delete('/questions/9')
+            data = json.loads(response.data)
+            question = Question.query.filter(Question.id == id).one_or_none()
+            # self.assertIsNone(question)
+            self.assertEqual(question, None)
+            self.assertEqual(data['success'], True)
+            self.assertEqual(response.status_code, 200)
+    
+    def test_delete_question_resource_not_found(self):
+        id = 10
+        question = Question.query.filter(Question.id == id).one_or_none()
+        if question is None:
+            response = self.client().delete('/questions/10')
+            data = json.loads(response.data)
+            self.assertEqual(data['success'], False)
+            self.assertEqual(data['message'], "Resource not found")
+            self.assertEqual(response.status_code, 404)
+    
+    def test_search_for_question(self):
+        searchTerm = 'title'
+        questions = Question.query.filter(Question.question.ilike('%'+searchTerm+'%')).all()
+        response = self.client().post('/questions', json={"searchTerm": searchTerm})
+        data = json.loads(response.data)
+        if len(questions) != 0:
+            self.assertTrue(data["questions"])
+            self.assertEqual(len(questions), data["totalQuestions"])
+            self.assertEqual(data['success'], True)
+            self.assertEqual(response.status_code, 200)
+    
+    def test_create_question(self):
+        new_question = {"question": "test question?",
+        "answer": "test answer.",
+        "difficulty": "1",
+        "category": "1" 
+        }
+        response = self.client().post('/questions', json=new_question)
+        data = json.loads(response.data)
+        self.assertEqual(data['success'], True)
+        self.assertEqual(response.status_code, 200)
+    
+    def test_unprocessable_create_question(self):
+        new_question = {"question": "test not valid question?",
+        "answer": "test not valid answer.",
+        "difficulty": "1",
+        "category": "test" 
+        }
+        response = self.client().post('/questions', json=new_question)
+        data = json.loads(response.data)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(data['message'], "Unprocessable")
+        
+    def test_get_questions_by_category(self):
+        questions = Question.query.filter_by(category=1).all()
+        response = self.client().get('categories/1/questions')
+        data = json.loads(response.data)
+        self.assertEqual(data['success'], True)
+        self.assertEqual(response.status_code, 200)
+        # check returned data 
+        self.assertTrue(len(data["questions"]))
+        self.assertEqual(len(questions), data["totalQuestions"])
+    
+    def test_failed_get_questions_by_category(self):
+        response = self.client().get('categories/test/questions')
+        data = json.loads(response.data)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['message'], "Resource not found")
+        self.assertEqual(response.status_code, 404)
+    
+    def test_get_quiz_question(self):
+        body = {"previous_questions": ['What is the heaviest organ in the human body?','Who discovered penicillin?', 'test question?']
+        , "quiz_category": "1"
+        }
+        response = self.client().post('/quizzes', json=body)
+        data = json.loads(response.data)
+        self.assertEqual(data['success'], True)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(data['question']['question'], "Hematology is a branch of medicine involving the study of what?")
+        
+    def test_get_quiz_question(self):
+        body = {"previous_questions": ['What is the heaviest organ in the human body?','Who discovered penicillin?', 'test question?']
+        , "quiz_category": "test"
+        }
+        response = self.client().post('/quizzes', json=body)
+        data = json.loads(response.data)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(data['message'], "Bad request")
+        
         
 
 

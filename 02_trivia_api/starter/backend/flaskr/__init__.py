@@ -76,8 +76,7 @@ def create_app(test_config=None):
           "categories": categorieslist,
           "current_category": None
         })
-      
-    except:
+    except EOFError:
       abort(400)
 
 
@@ -91,12 +90,10 @@ def create_app(test_config=None):
 
   @app.route('/questions/<int:question_id>', methods=['DELETE'])
   def delete_question(question_id):
-    try:
-      try:
-        question = Question.get(question_id)
-      except:
+    try: 
+      question = Question.query.filter(Question.id == question_id).one_or_none()
+      if question is None:
         abort(404)
-
       try:
         question.delete()
       except:
@@ -106,63 +103,65 @@ def create_app(test_config=None):
         "success": True,
         "question_id": question_id
       })
-    except:
+    except EOFError:
       abort(400)
 
   @app.route('/questions', methods=['POST'])
   def create_question():
-    data = request.get_json()
-    '''
-    @TODO: 
-    Create a POST endpoint to get questions based on a search term. 
-    It should return any questions for whom the search term 
-    is a substring of the question. 
-
-    TEST: Search by any phrase. The questions list will update to include 
-    only question that include that string within their question. 
-    Try using the word "title" to start. 
-    '''
-    if 'searchTerm' in list(data):
-      try:
-        searchTerm = data["searchTerm"]
-        questions = Question.query.filter_by(question.ilike('%'+searchTerm+'%')).all()  
-        questionlist = [q.format for q in questions]
-        return jsonify({
-          "success": True,
-          "questions": questionlist,
-          "totalQuestions": len(questionlist),
-          "currentCategory": None
-        })
-      except:
-        abort(400)
-    else:
+    if request.data:
+      data = request.get_json()
       '''
       @TODO: 
-      Create an endpoint to POST a new question, 
-      which will require the question and answer text, 
-      category, and difficulty score.
+      Create a POST endpoint to get questions based on a search term. 
+      It should return any questions for whom the search term 
+      is a substring of the question. 
 
-      TEST: When you submit a question on the "Add" tab, 
-      the form will clear and the question will appear at the end of the last page
-      of the questions list in the "List" tab.  
+      TEST: Search by any phrase. The questions list will update to include 
+      only question that include that string within their question. 
+      Try using the word "title" to start. 
       '''
-      try:
-        question = data["question"]
-        answer = data["answer"]
-        difficulty = data["difficulty"]
-        category = data["category"] 
-        ques = Question(question = question, answer = answer,
-        difficulty = difficulty, category = category)
+      if 'searchTerm' in data:
         try:
-          ques.insert()
+          searchTerm = data["searchTerm"]
+          questions = Question.query.filter(Question.question.ilike('%'+searchTerm+'%')).all()  
+          questionlist = [q.format() for q in questions]
+          return jsonify({
+            "success": True,
+            "questions": questionlist,
+            "totalQuestions": len(questionlist),
+            "currentCategory": None
+          })
         except:
           abort(422)
-        return jsonify({
-          "success": True
-        })
-      except:
-        abort(400)
+      else:
+        '''
+        @TODO: 
+        Create an endpoint to POST a new question, 
+        which will require the question and answer text, 
+        category, and difficulty score.
 
+        TEST: When you submit a question on the "Add" tab, 
+        the form will clear and the question will appear at the end of the last page
+        of the questions list in the "List" tab.  
+        '''
+        try:
+          question = data["question"]
+          answer = data["answer"]
+          difficulty = data["difficulty"]
+          category = data["category"] 
+          ques = Question(question = question, answer = answer,
+          difficulty = difficulty, category = category)
+          try:
+            ques.insert()
+          except:
+            abort(422)
+          return jsonify({
+            "success": True
+          })
+        except EOFError:
+          abort(200)
+    else:
+      abort(400)
   '''
   @TODO: 
   Create a GET endpoint to get questions based on category. 
@@ -183,7 +182,7 @@ def create_app(test_config=None):
         "currentCategory": category_id
       })
     except:
-      abort(400)
+      abort(404)
 
 
   '''
@@ -197,16 +196,16 @@ def create_app(test_config=None):
   one question at a time is displayed, the user is allowed to answer
   and shown whether they were correct or not. 
   '''
-  @app.route('/quizzes')
+  @app.route('/quizzes', methods=['POST'])
   def get_quiz_question():
     try:
       data = request.get_json()
       quiz_category = data["quiz_category"]
-      previous_questions = data.getlist("previous_questions")
-      question = db.session.query(Question).filter(Question.question not in previous_questions, Question.category == quiz_category).one()
+      previous_questions = list(data["previous_questions"])
+      question = Question.query.filter(~Question.question.in_(previous_questions), Question.category == quiz_category).first()
       return jsonify({
         "success": True,
-        "questions": question.format()
+        "question": question.format()
       })
     except:
       abort(400)
