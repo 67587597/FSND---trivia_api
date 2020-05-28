@@ -202,7 +202,11 @@ def create_app(test_config=None):
       data = request.get_json()
       quiz_category = data["quiz_category"]
       previous_questions = list(data["previous_questions"])
-      question = Question.query.filter(~Question.question.in_(previous_questions), Question.category == quiz_category).first()
+      # question = Question.query.filter(~Question.question.in_(previous_questions)).filter(Question.category == quiz_category | quiz_category == None).first()
+      if quiz_category is not None:
+        question = Question.query.filter(~Question.question.in_(previous_questions), Question.category == quiz_category).order_by(id).first()
+      else:
+        question = Question.query.filter(~Question.question.in_(previous_questions)).order_by(Question.id).first()
       return jsonify({
         "success": True,
         "question": question.format()

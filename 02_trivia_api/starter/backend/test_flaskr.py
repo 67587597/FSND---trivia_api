@@ -146,7 +146,18 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['success'], True)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(data['question']['question'], "Hematology is a branch of medicine involving the study of what?")
-        
+    
+    def test_get_quiz_question_no_category_provided(self):
+        body = {"previous_questions": ['What is the heaviest organ in the human body?','Who discovered penicillin?', 'test question?']
+        , "quiz_category": None
+        }
+        response = self.client().post('/quizzes', json=body)
+        data = json.loads(response.data)
+        self.assertEqual(data['success'], True)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(data['question']['question'], "What movie earned Tom Hanks his third straight Oscar nomination, in 1996?")
+  
+
     def test_get_quiz_question(self):
         body = {"previous_questions": ['What is the heaviest organ in the human body?','Who discovered penicillin?', 'test question?']
         , "quiz_category": "test"
