@@ -113,7 +113,6 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['success'], True)
         self.assertEqual(response.status_code, 200)
     
-    # test with not valid category id
     def test_unprocessable_create_question(self):
         new_question = {"question": "test not valid question?",
         "answer": "test not valid answer.",
@@ -136,7 +135,6 @@ class TriviaTestCase(unittest.TestCase):
         self.assertTrue(len(data["questions"]))
         self.assertEqual(len(questions), data["total_questions"])
     
-    # test with not valid category id
     def test_failed_get_questions_by_category(self):
         response = self.client().get('categories/test/questions')
         data = json.loads(response.data)
@@ -172,7 +170,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(data['question']['question'], "What is the heaviest organ in the human body?")
   
-    # test with not valid category id
+
     def test_bad_request_get_quiz_question(self):
         body = {"previous_questions": [20,21]
         , "quiz_category": {"type": "test", "id": "test"}}

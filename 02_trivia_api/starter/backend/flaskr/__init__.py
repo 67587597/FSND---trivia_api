@@ -26,6 +26,9 @@ def create_app(test_config=None):
     response.headers.add("Access-Control-Allow-Methods", "GET, PUT, POST, PATCH, DELETE, OPTIONS")
     return response
 
+  # @app.route('/')
+  # def main():
+  #   return "Main"
 
   '''
   @TODO: 
@@ -35,8 +38,8 @@ def create_app(test_config=None):
   @app.route('/categories')
   def get_categories():
     try:
+      # categorieslist = [category.format() for category in Category.query.all()]
       categorieslist = [category.format() for category in Category.query.all()]
-      #  form categories as dictionay to match expected frontend result
       categories_dict = {category["id"]: category["type"] for category in categorieslist}
       return jsonify({"success": True,
         "categories": categories_dict
@@ -64,11 +67,9 @@ def create_app(test_config=None):
       end = start + QUESTIONS_PER_PAGE
       questions = Question.query.all()
       categorieslist = [category.format() for category in Category.query.all()]
-      #  form categories as dictionay to match expected frontend result
       categories_dict = {category["id"]: category["type"] for category in categorieslist}
       questionslist = [question.format() for question in questions]
       questionslist_paginated = questionslist[start:end]
-      # if page is not valid
       if len(questionslist_paginated) == 0:
         abort(404)
       else:
@@ -78,7 +79,6 @@ def create_app(test_config=None):
           "categories": categories_dict,
           "current_category": None
         })
-    #catch type of error 
     except EOFError:
       abort(400)
 
@@ -95,13 +95,13 @@ def create_app(test_config=None):
   def delete_question(question_id):
     try: 
       question = Question.query.filter(Question.id == question_id).one_or_none()
-      #  check if question is exits, otherwise raise 422 error
       if question is None:
         abort(404)
       try:
         question.delete()
       except:
-        abort(422)            
+        abort(422)
+            
       return jsonify({
         "success": True,
         "question_id": question_id
@@ -123,8 +123,6 @@ def create_app(test_config=None):
       only question that include that string within their question. 
       Try using the word "title" to start. 
       '''
-      #  check if request body contains searchTerm to proceed retrieving questions based on search trerm, 
-      # otherwise it wull create a new question
       if 'searchTerm' in data:
         try:
           searchTerm = data["searchTerm"]
@@ -180,7 +178,6 @@ def create_app(test_config=None):
   def get_questions_by_category(category_id):
     try:
       questions = Question.query.filter_by(category=category_id).all()  
-      #  set the format of returned questions
       questionlist = [q.format() for q in questions]
       current_category = Category.query.get(category_id)
       return jsonify({
@@ -206,6 +203,7 @@ def create_app(test_config=None):
   '''
   @app.route('/quizzes', methods=['POST'])
   def get_quiz_question():
+    # try:
     data = request.get_json()
     quiz_category = None
     if "quiz_category" in data and data["quiz_category"] is not None:
@@ -213,6 +211,7 @@ def create_app(test_config=None):
     previous_questions = None
     if "previous_questions" in data: 
       previous_questions = list(data["previous_questions"])
+    # question = Question.query.filter(~Question.question.in_(previous_questions)).filter(Question.category == quiz_category | quiz_category == None).first()
     try:
       if previous_questions is not None:
         if quiz_category is not None and quiz_category != 0:
@@ -241,7 +240,6 @@ def create_app(test_config=None):
   Create error handlers for all expected errors 
   including 404 and 422. 
   '''
-  # creating error handlers to customize returned response
   @app.errorhandler(400)
   def bad_request(error):
     return jsonify({
