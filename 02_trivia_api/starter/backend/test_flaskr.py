@@ -82,10 +82,10 @@ class TriviaTestCase(unittest.TestCase):
             self.assertEqual(response.status_code, 200)
     
     def test_delete_question_resource_not_found(self):
-        id = 10
+        id = 1000
         question = Question.query.filter(Question.id == id).one_or_none()
         if question is None:
-            response = self.client().delete('/questions/10')
+            response = self.client().delete('/questions/1000')
             data = json.loads(response.data)
             self.assertEqual(data['success'], False)
             self.assertEqual(data['message'], "Resource not found")
@@ -143,8 +143,8 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 404)
     
     def test_get_quiz_question(self):
-        body = {"previous_questions": ['What is the heaviest organ in the human body?','Who discovered penicillin?', 'test question?']
-        , "quiz_category": "1"
+        body = {"previous_questions": [20,21]
+        , "quiz_category": {"type": "Science", "id": "1"}
         }
         response = self.client().post('/quizzes', json=body)
         data = json.loads(response.data)
@@ -153,7 +153,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['question']['question'], "Hematology is a branch of medicine involving the study of what?")
     
     def test_get_quiz_question_no_category_provided(self):
-        body = {"previous_questions": ['What is the heaviest organ in the human body?','Who discovered penicillin?', 'test question?']
+        body = {"previous_questions": [20,21]
         , "quiz_category": None
         }
         response = self.client().post('/quizzes', json=body)
@@ -161,12 +161,19 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['success'], True)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(data['question']['question'], "What movie earned Tom Hanks his third straight Oscar nomination, in 1996?")
+    
+    def test_get_quiz_question_no_previous_questions(self):
+        body = {"quiz_category": {"type": "Science", "id": "1"}}
+        response = self.client().post('/quizzes', json=body)
+        data = json.loads(response.data)
+        self.assertEqual(data['success'], True)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(data['question']['question'], "What is the heaviest organ in the human body?")
   
 
-    def test_get_quiz_question(self):
-        body = {"previous_questions": ['What is the heaviest organ in the human body?','Who discovered penicillin?', 'test question?']
-        , "quiz_category": "test"
-        }
+    def test_bad_request_get_quiz_question(self):
+        body = {"previous_questions": [20,21]
+        , "quiz_category": {"type": "test", "id": "test"}}
         response = self.client().post('/quizzes', json=body)
         data = json.loads(response.data)
         self.assertEqual(data['success'], False)

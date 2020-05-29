@@ -16,7 +16,7 @@ def create_app(test_config=None):
   '''
   @TODO: Set up CORS. Allow '*' for origins. Delete the sample route after completing the TODOs
   '''
-  cors = CORS(app, resourses={r"/api/*": {"origins": "*"}})
+  cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
   '''
   @TODO: Use the after_request decorator to set Access-Control-Allow
   '''
@@ -38,9 +38,11 @@ def create_app(test_config=None):
   @app.route('/categories')
   def get_categories():
     try:
+      # categorieslist = [category.format() for category in Category.query.all()]
       categorieslist = [category.format() for category in Category.query.all()]
+      categories_dict = {category["id"]: category["type"] for category in categorieslist}
       return jsonify({"success": True,
-        "categories": categorieslist
+        "categories": categories_dict
       })
     except:
       abort(400)
@@ -65,6 +67,7 @@ def create_app(test_config=None):
       end = start + QUESTIONS_PER_PAGE
       questions = Question.query.all()
       categorieslist = [category.format() for category in Category.query.all()]
+      categories_dict = {category["id"]: category["type"] for category in categorieslist}
       questionslist = [question.format() for question in questions]
       questionslist_paginated = questionslist[start:end]
       if len(questionslist_paginated) == 0:
@@ -73,7 +76,7 @@ def create_app(test_config=None):
         return jsonify({"success": True,
           "questions": questionslist_paginated,
           "total_questions": len(questions),
-          "categories": categorieslist,
+          "categories": categories_dict,
           "current_category": None
         })
     except EOFError:
@@ -200,19 +203,36 @@ def create_app(test_config=None):
   '''
   @app.route('/quizzes', methods=['POST'])
   def get_quiz_question():
-    try:
-      data = request.get_json()
-      quiz_category = data["quiz_category"]
+    # try:
+    data = request.get_json()
+    quiz_category = None
+    if "quiz_category" in data and data["quiz_category"] is not None:
+      quiz_category = data["quiz_category"]["id"]
+    previous_questions = None
+    if "previous_questions" in data: 
       previous_questions = list(data["previous_questions"])
-      # question = Question.query.filter(~Question.question.in_(previous_questions)).filter(Question.category == quiz_category | quiz_category == None).first()
-      if quiz_category is not None:
-        question = Question.query.filter(~Question.question.in_(previous_questions), Question.category == quiz_category).order_by(id).first()
+    # question = Question.query.filter(~Question.question.in_(previous_questions)).filter(Question.category == quiz_category | quiz_category == None).first()
+    try:
+      if previous_questions is not None:
+        if quiz_category is not None and quiz_category != 0:
+          question = Question.query.filter(~Question.id.in_(previous_questions), Question.category == quiz_category).order_by(Question.id).limit(1).one_or_none()
+        else:
+          question = Question.query.filter(~Question.id.in_(previous_questions)).order_by(Question.id).limit(1).one_or_none()
       else:
-        question = Question.query.filter(~Question.question.in_(previous_questions)).order_by(Question.id).first()
-      return jsonify({
-        "success": True,
-        "question": question.format()
+        if quiz_category is not None and quiz_category != 0:
+          question = Question.query.filter(Question.category == quiz_category).order_by(Question.id).limit(1).one_or_none()
+        else:
+          question = Question.query.order_by(Question.id).limit(1).one_or_none()
+
+      if question is None:
+       return jsonify({
+        "success": True
       })
+      else: 
+        return jsonify({
+          "success": True,
+          "question": question.format()
+        })
     except:
       abort(400)
   '''
