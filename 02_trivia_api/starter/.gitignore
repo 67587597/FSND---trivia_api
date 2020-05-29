@@ -13,5 +13,5 @@ credentials.py
 ehthumbs.db
 Thumbs.db
 env/
-node_modules/
 pip
+node_modules/
