@@ -1,7 +1,7 @@
 .vscode
 __pycache__
 venv
-credentials.py
+
 
 # OS generated files #
 ######################
